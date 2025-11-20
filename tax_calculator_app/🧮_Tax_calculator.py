@@ -27,7 +27,7 @@ with st.container(border=False):
                                     index=None, placeholder = "Select...")
     age = col1.number_input("What is your age?", 
                             min_value=0, max_value=117, 
-                            value=None, step=1, placeholder="Type in your age...", key=1)
+                            value=None, step=1, placeholder="Type...", key=1)
     confession = col2.selectbox("What is your confession?", 
                                 ("Roman Catholic", "Protestant", "Christian Catholic", "Other/None"), 
                                 index=None, placeholder = "Select...")
@@ -41,7 +41,7 @@ with st.container(border=False):
         for i in range(0,number_of_children):
             age_of_children = col2.number_input("What is the age of your child?",
                                                 min_value=0, max_value=99, 
-                                                value=None, step=1, key=f"kids_{i}", placeholder="Type in your childs age...")
+                                                value=None, step=1, key=f"kids_{i}", placeholder="Type...")
     income = col1.number_input("Gross income 2025 in CHF", 
                                min_value=0, value=0, step=5000, 
                                placeholder="Type in your income in CHF...")

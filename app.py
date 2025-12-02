@@ -125,13 +125,33 @@ tax_rates_federal = tax_rates_federal.loc[:, tax_rates_federal.columns.notna()] 
 tax_rates_federal = tax_rates_federal.drop(columns=["Canton ID", "Canton"]) #delete irrelevant columns
 tax_rates_federal["net_income"] = tax_rates_federal["net_income"].str.replace("'", "").astype(float) #deleting "'" in the net income column and converting to float 
 tax_rates_federal["base_amount_CHF"] = tax_rates_federal["base_amount_CHF"].str.replace("'", "").astype(float) #deleting "'" in the base_amount_CHF column and converting to float 
+split_taxable_entity = tax_rates_federal["taxable_entity"].str.split(",", expand=True)
 
+#splitting up taxable_entity column into two columns "marital status" and "childern". 
+column_index = tax_rates_federal.columns.get_loc("taxable_entity")
+for i, col in enumerate(split_taxable_entity.columns):
+    tax_rates_federal.insert(column_index + i, col, split_taxable_entity[col])
+tax_rates_federal.rename(columns={0: "marital_status", 1: "children"}, inplace=True)
 
-#tax_rates_federal[]
+tax_rates_federal = tax_rates_federal.drop(columns=["taxable_entity"]) #drop old taxable entity column 
 
-print(tax_rates_federal.head(100))
+tax_rates_federal["children"] = tax_rates_federal["children"].str.replace("no children", "no").str.replace("with children", "yes") #renaming child column values to yes / no 
+tax_rates_federal["marital_status"] = tax_rates_federal["marital_status"].str.lower()
 
+#print(tax_rates_federal.head(100))
 
+#cantonal income tax
+tax_rates_federal = pd.read_csv('2025_estv_tax_rates_confederation.csv', sep=',', skiprows=4) # imports the set and skips the first rows (empty)
+
+tax_rates_federal.columns = tax_rates_federal.iloc[0] #selecting row that will hold column titles
+tax_rates_federal = tax_rates_federal.rename(columns={
+    "Type of tax": "tax_type",
+    "Taxable entity": "taxable_entity",
+    "Tax authority": "tax_authority",
+    "Taxable income for federal tax": "net_income",
+    "Additional %": "additional_%",
+    "Base amount CHF": "base_amount_CHF"
+}) #renaming column titles
 
 
 

@@ -1,6 +1,4 @@
-﻿,Kanton St.Gallen Tarif 2025,,,
-,Einfache Steuer Alleinstehende,,Einfache Steuer gemeinsam Steuerpflichtige,
-Einkommen,Fr.,%,Fr.,%
+Einkommen,Einfache Steuer Alleinstehende,EAinProzent,Einfache Steuer gemeinsam Steuerpflichtige,EgSinProzent
 10’000,0.00,0.0000%,0.00,0.0000%
 10’100,0.00,0.0000%,0.00,0.0000%
 10’200,0.00,0.0000%,0.00,0.0000%
@@ -5494,4 +5492,5 @@ Einkommen,Fr.,%,Fr.,%
 528’100,44’888.50,8.5000%,44’890.50,8.5004%
 528’200,44’897.00,8.5000%,44’900.80,8.5007%
 528’300,44’905.50,8.5000%,44’909.30,8.5007%
+
 528’400,44’914.00,8.5000%,44’919.60,8.5011%

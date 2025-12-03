@@ -3,12 +3,12 @@ import pandas as pd
 import numpy as np
 
 #Sidebar
-st.set_page_config(page_title="Tax calcualator", page_icon="🧮")
-st.sidebar.success("Welcome to your tax calculator!")
+st.set_page_config(page_title="Tax Calcualator", page_icon="🧮")
+st.sidebar.success("Welcome to the St. Gallen tax calculator!")
 #st.sidebar.header("Tax calculator")
 
 #Title and infobox
-st.title("🧮 Tax Calculator 2025")
+st.title("🧮 St. Gallen Tax Calculator 2025")
 
 st.info("With this app you can calculate your wealth and income tax and find out where you have the potential of saving money by finding unused tax saving options!")
 
@@ -19,9 +19,6 @@ with st.container(border=False):
     #Layout
     col1, col2,col3 = st.columns(3)
     #input widgets
-    kanton = col1.selectbox("Please select the canton you live in.",
-                            ( "Aargau", "Appenzell Ausserrhoden", "Appenzell Inerrhoden", "Basel-Land", "Basel-Stadt", "Bern", "Freiburg"), 
-                            index=None, placeholder = "Select...",)
     marital_status = col1.selectbox("What is your martial status?", 
                                     ("Single", "Married", "Civil Union", "Concubinage"), 
                                     index=None, placeholder = "Select...")
@@ -59,5 +56,7 @@ if left.button("Calculate", type="primary"):
     
 #Display results
 st.metric(label="Your estimated tax in 2025", value=f"CHF {taxes:,.2f}")
+
+
     
 

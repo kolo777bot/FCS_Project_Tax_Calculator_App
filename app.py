@@ -158,10 +158,15 @@ tax_rates_cantonal = tax_rates_cantonal.rename(columns={
 tax_rates_cantonal = tax_rates_cantonal.drop(columns=["Canton ID"]) #delete irrelevant columns
 tax_rates_cantonal["for_the_next_amount_CHF"] = tax_rates_cantonal["for_the_next_amount_CHF"].str.replace("'", "").astype(float) #deleting "'" in the for_the_next_amount_CHF column and converting to float 
 
-print(tax_rates_cantonal.head(100))
+#print(tax_rates_cantonal.head(100))
 
 
 
+#cantonal and municipal tax multipliers
+tax_rates_municipal = pd.read_csv('2025_estv_tax_multipliers_sg.csv', sep=',', skiprows=2) # imports the set and skips the first rows (empty)
 
+tax_rates_municipal.columns = tax_rates_municipal.iloc[0] #selecting row that will hold column titles
+tax_rates_municipal = tax_rates_municipal[1:] #delete old titles
+tax_rates_municipal = tax_rates_municipal.loc[:, tax_rates_municipal.columns.notna()]
 
-
+print(tax_rates_municipal.head(100))

@@ -16,7 +16,7 @@ contribution_pillar_3a = 10000 #can be max 7258 CHF p.Y for employed and 20% of 
 total_insurance_expenses = 8000 
 
 ####Determine deductions
-#Mandatory
+#Mandatory deductions
 social_deductions_total = d.get_total_social_deductions(income_gross, employed)
 bv_minimal_contribution = d.get_mandatory_pension_contribution(income_gross, age)
 total_mandatory_deductions = d.get_total_mandatory_deductions(income_gross, age, employed)

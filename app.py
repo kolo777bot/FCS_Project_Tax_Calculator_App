@@ -1,7 +1,7 @@
 #Importing libraries.
 import pandas as pd
-import data.constants as c
 import loaders.load_datasets as datasets
+import tax_calculations.total_income_tax as t
 
 
 
@@ -15,237 +15,21 @@ church_affiliation = 'protestant' # None, 'protestant', 'roman_catholic', 'chris
 contribution_pillar_3a = 10000 #can be max 7258 CHF p.Y for employed and 20% of income or 36288 chf for self employed, whatever is larger
 total_insurance_expenses = 8000 
 
-###################################
-# Pillar 1 Mandatory Deductions: Social Deductions
-# Pillar 2 Minimal Contributiuons 
-# Optional Deductions
-###################################
 
-
-
-alv_total = c.alv_rate_employed * min(income_gross, c.alv_income_ceiling)
-
-#Calculating the total social deductions for employed and self-employed:
-if employed == True:
-    social_deductions_total = income_gross * (c.ahv_rate_employed + c.iv_rate_employed + c.eo_rate_employed) + alv_total
-else: 
-    social_deductions_total = income_gross * (c.ahv_rate_self_employed + c.iv_rate_self_employed + c.eo_rate_employed) 
-
-
-
-### Determine Minimal mandatory Second Pillar deductions (Occupational pension) for employed
-
-def get_mandatory_pension_rate(age):
-    coord_salary_min = 26_460
-    coord_salary_max = 90_720
-
-    if income_gross < coord_salary_min or age < 25:
-        bv_rate = 0
-    elif age < 25:
-        bv_rate = 0
-    elif 25 <= age <= 34:
-        bv_rate = 0.07 
-    elif 35 <= age <= 44:
-        bv_rate = 0.1
-    elif 45 <= age <= 54:
-        bv_rate = 0.15
-    elif 55 <= age <= 65:
-        bv_rate = 0.18 
-    else:
-        bv_rate = 0
-    
-    bv_minimal_contribution = bv_rate * min(income_gross, coord_salary_max)
-    return bv_minimal_contribution
-
-bv_minimal_contribution = get_mandatory_pension_rate(age)
-
-
-### Define optional deductions
-#Determine deduction of pillar 3a contributions
-contribution_pillar_3a_threshold_employed = 7258
-contribution_pillar_3a_threshold_self_employed = min(income_gross * 0.2, 36_288)
-
-if employed == True:
-    deduction_pillar_3a = min(contribution_pillar_3a, contribution_pillar_3a_threshold_employed)
-else:
-    deduction_pillar_3a = min(contribution_pillar_3a, contribution_pillar_3a_threshold_self_employed)
-
-#Determine insurance premium deductions
-insurance_max_deductible_amount_single = 1700
-insurance_max_deductible_amount_married = 3500 
-
-deduction_insurance_single = min(total_insurance_expenses, 1700)
-deduction_insurance_married = min(total_insurance_expenses, 3500 / 2)
- #### different deductible for cantonal tax in SG. Right now ignoring this 
-
-###Final deductions. Still working on this, therefore ignored rigth now
+###Final deductions. Still working on this, see folder "deductions"
 deduction_total_cantonal = 4000
 deduction_total_federal = 4000 
-
-print(f'''Overview:
-      Total Pillar 1 Deductions: CHF {social_deductions_total}
-      Minimal Pillar 2 Contribution: CHF {bv_minimal_contribution}
-      Total Pillar 3a deduction: CHF {deduction_pillar_3a}
-      Insurance expenses: CHF {total_insurance_expenses}
-      Deduction insurance single:
-      ''')
-
-########################
 # Calculating net income
-
 income_net = income_gross - (deduction_total_cantonal + deduction_total_federal)
 
-######################
 # Calculating tax
-
 #getting datasets
 tax_rates_federal = datasets.load_federal_tax_rates()
 tax_rates_cantonal = datasets.load_cantonal_base_tax_rates()
 tax_multiplicators_cantonal_municipal = datasets.load_cantonal_municipal_church_multipliers()
 
 
-######################################
-# Calculation federal tax
-######################################
-
-#integrating married users and single users with kids into one federal tax class
-def map_marital_status_and_children_for_federal_tax(marital_status, number_of_children):
-
-    if number_of_children > 0 or marital_status == "married":
-        return "married/single"
-    else:
-        return "single"
-    
-### computing federal income tax
-def calculation_income_tax_federal(tax_rates_federal, marital_status, number_of_children, income_net):
-    # Map inputs to table keys
-    marital_status_children_key = map_marital_status_and_children_for_federal_tax(marital_status, number_of_children)
-
-    # Filter and copy relevant rows
-    df = tax_rates_federal[
-        (tax_rates_federal["tax_type"] == "Income tax")
-        & (tax_rates_federal["tax_authority"] == "Federal tax")
-        & (tax_rates_federal["marital_status"] == marital_status_children_key)
-            ].copy()
-
-    # Handling income below minimum
-    if income_net <= df["net_income"].min():
-        row = df.iloc[0]
-        return row["base_amount_CHF"]
-
-    # select last row with net_income (column name) <= income_net (derived from user input)
-    row = df[df["net_income"] <= income_net].iloc[-1]
-
-    base_amount_chf = row["base_amount_CHF"]
-    threshold_net_income = row["net_income"]
-    federal_tax_rate = row["additional_%"]  
-
-    taxable_excess = income_net - threshold_net_income
-    income_tax_federal = base_amount_chf + (taxable_excess * (federal_tax_rate / 100.0))
-
-    return income_tax_federal
-
-
-######################################
-# Calculation cantonal base tax
-######################################
-
-def calculation_income_tax_base_SG(tax_rates_cantonal, income_net):
-    df = tax_rates_cantonal
-    remaining_income_net = income_net
-    base_income_tax_cantonal = 0.0
-
-    for i, row in df.iterrows(): # iterating through rows                   
-        band_width = row["for_the_next_amount_CHF"]
-        tax_rate_band = row["additional_%"]
-
-        if remaining_income_net <= 0:
-            break
-
-        taxable_amount_in_band = min(remaining_income_net, band_width)
-        base_income_tax_cantonal += taxable_amount_in_band * tax_rate_band / 100.0
-        remaining_income_net -= taxable_amount_in_band
-
-    return float(base_income_tax_cantonal)
-
-######################################
-# Calculation municipality church tax
-######################################
-
-def calculation_cantonal_municipal_church_tax(tax_multiplicators_cantonal_municipal, base_income_tax_cantonal, commune, church_affiliation):
-    
-    df = tax_multiplicators_cantonal_municipal
-    
-    # filtering commune
-    row = df[(df["commune"] == commune)].iloc[0]
-
-    # getting multipliers canton and commune
-    canton_multiplier = row["canton_multiplier"] / 100.0
-    commune_multiplier = row["commune_multiplier"] / 100.0
-
-    # adding church tax muliplier if there is an affiliation 
-    if church_affiliation is not None:
-        col_map = {
-            "protestant": "church_protestant",
-            "roman_catholic": "church_roman_catholic",
-            "christian_catholic": "church_christian_catholic"
-        }
-        col = col_map[church_affiliation]
-        church_multiplier = row[col] / 100.0
-    else:
-        church_multiplier = 0 
-
-    income_tax_canton = base_income_tax_cantonal * canton_multiplier
-    income_tax_commune = base_income_tax_cantonal * commune_multiplier
-    income_tax_church = base_income_tax_cantonal * church_multiplier
-    total_income_tax_canton_municipal_church = base_income_tax_cantonal * (canton_multiplier + commune_multiplier + church_multiplier)
-    data_income_tax_canton_municipal_church = (total_income_tax_canton_municipal_church, income_tax_canton, income_tax_commune, income_tax_church)
-    
-    return data_income_tax_canton_municipal_church
-
-
-######################################
-# Calculation total income tax
-# Returns a dictionary of total tax and individual parts
-######################################
-
-def calculation_total_income_tax(
-    tax_rates_federal,
-    tax_rates_cantonal,
-    tax_multiplicators_cantonal_municipal,
-    marital_status,
-    number_of_children,
-    income_net,
-    commune,
-    church_affiliation):
-    
-    # federal tax
-    federal_tax = calculation_income_tax_federal(tax_rates_federal, marital_status=marital_status, number_of_children=number_of_children, income_net=income_net)
-
-    # base cantonal tax (before multipliers)
-    base_income_tax_cantonal = calculation_income_tax_base_SG(tax_rates_cantonal, income_net)
-
-    # cantonal + municipal + church tax (after multipliers)
-    (total_canton_municipal_church, tax_canton, tax_commune, tax_church) = calculation_cantonal_municipal_church_tax(
-        tax_multiplicators_cantonal_municipal,
-        base_income_tax_cantonal,
-        commune,
-        church_affiliation)
-
-    total_income_tax = federal_tax + total_canton_municipal_church
-
-    return {
-        "federal_tax": federal_tax,
-        "cantonal_base_tax": base_income_tax_cantonal,
-        "cantonal_tax": tax_canton,
-        "municipal_tax": tax_commune,
-        "church_tax": tax_church,
-        "total_cantonal_municipal_church_tax": total_canton_municipal_church,
-        "total_income_tax": total_income_tax,
-    }
-
-
-income_tax_dictionary = calculation_total_income_tax(
+income_tax_dictionary = t.calculation_total_income_tax(
     tax_rates_federal,
     tax_rates_cantonal,
     tax_multiplicators_cantonal_municipal,

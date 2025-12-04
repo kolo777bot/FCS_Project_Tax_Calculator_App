@@ -1,6 +1,6 @@
 #Importing libraries.
 import pandas as pd
-import data.social_security_constants as c
+import data.constants as c
 
 income_gross = 200_000 # int
 employed = True # bool
@@ -20,13 +20,13 @@ total_insurance_expenses = 8000
 
 
 
-alv_total = alv_rate_employed * min(income_gross, alv_income_ceiling)
+alv_total = c.alv_rate_employed * min(income_gross, c.alv_income_ceiling)
 
 #Calculating the total social deductions for employed and self-employed:
 if employed == True:
-    social_deductions_total = income_gross * (ahv_rate_employed + iv_rate_employed + eo_rate_employed) + alv_total
+    social_deductions_total = income_gross * (c.ahv_rate_employed + c.iv_rate_employed + c.eo_rate_employed) + alv_total
 else: 
-    social_deductions_total = income_gross * (ahv_rate_self_employed + iv_rate_self_employed + eo_rate_employed) 
+    social_deductions_total = income_gross * (c.ahv_rate_self_employed + c.iv_rate_self_employed + c.eo_rate_employed) 
 
 
 

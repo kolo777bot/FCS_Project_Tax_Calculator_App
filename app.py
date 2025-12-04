@@ -4,7 +4,6 @@ import loaders.load_datasets as datasets
 import tax_calculations.total_income_tax as t
 
 
-
 income_gross = 200_000 # int
 employed = True # bool
 marital_status = "married" # "married", "single"

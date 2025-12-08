@@ -42,7 +42,6 @@ with st.container(border=False):
         employed = True
     else:
         employed = False
-    col1.space(size="large")
         
     income_gross = col1.number_input("Gross income 2025 in CHF", 
                                min_value=0, value=0, step=5000, 
